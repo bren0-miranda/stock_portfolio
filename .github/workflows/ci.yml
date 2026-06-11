@@ -12,26 +12,13 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: test-${{ matrix.artifact }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - branch: main
-            artifact: main
-          - branch: ${{ github.head_ref }}
-            artifact: pull-request
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          ref: ${{ matrix.branch }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -51,29 +38,5 @@ jobs:
       - name: Tests
         run: npm test -- --run --coverage
 
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v6
-        with:
-          name: coverage-${{ matrix.artifact }}
-          path: coverage
-
       - name: Build
         run: npm run build
-  report-coverage:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: "Download Coverage Artifacts"
-        uses: actions/download-artifact@v6
-        with:
-          name: coverage-pull-request
-          path: coverage
-      - uses: actions/download-artifact@v6
-        with:
-          name: coverage-main
-          path: coverage-main
-      - name: "Report Coverage"
-        uses: davelosert/vitest-coverage-report-action@v2
-        with:
-          json-summary-compare-path: coverage-main/coverage-summary.json
